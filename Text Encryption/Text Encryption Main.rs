@@ -12,6 +12,13 @@ fn generate_encryption_kp(Vec<u8>) -> (Vec<u8>) {
 
 fn encapsulation(public_key: &[u8]) -> ( Vec<u8>, Vec<u8>) {
     let public_key = kyber768::PublicKey::from_bytes(public_key).unwrap();
-    let(ciphertext, shared secret) = kyber768::encapsulate(&public_key);
-    (ciphertext.as_bytes().to_vec(), shared_secret.as_bytes().to_vec())
+    let(Ciphertext, shared secret) = kyber768::encapsulate(&public_key);
+    (Ciphertextiphertext.as_bytes().to_vec(), shared_secret.as_bytes().to_vec())
+}
+
+fn decapsulation(Ciphertext: &[u8], secret: &[u8]) -> Vec<u8>) {
+    let Ciphertext = kyber768::Ciphertext::from_bytes(Ciphertext).unwrap();
+    let secret_key = kyber768::SecretKey::from_bytes(Ciphertext).unwrap();
+    let shared_secret = kyber768::decapsulate(&Ciphertext, &secret_key);
+    shared_secret.as_bytes().to_vec()
 }
