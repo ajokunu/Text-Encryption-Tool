@@ -23,18 +23,25 @@ fn decapsulation(Ciphertext: &[u8], secret: &[u8]) -> Vec<u8>) {
     shared_secret.as_bytes().to_vec()
 }
 
+fn generate_nonce() -> [u8; 12] {
+    let mut rng = OsRng;
+    let mut nonce = [0u8; 12];
+    rng.fill(&mut nonce);
+    nonce
+}
+
 fn encrypt(plaintext: &str, shared_secret: &[u8]) -> String {
     let key = Key::from_slice(shared_secret);
     let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(b"unique nonce"); 
+    let nonce = Nonce::from_slice( &nonce_bytes); 
     let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).unwrap();
-    encode(ciphertext)
+    (encode(ciphertext), nonce_bytes)
 }
 
-fn decrypt(ciphertext: &str, shared_secret: &[u8]) -> String {
+fn decrypt(ciphertext: &str, shared_secret: &[u8], nonce_bytes: &[u8; 12]) -> String {
     let key = Key::from_slice(shared_secret);
     let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(b"unique nonce");
+    let nonce = Nonce::from_slice(nonce_bytes);
     let ciphertext = decode(ciphertext).unwrap();
     let plaintext = cipher.decrypt(nonce, ciphertext.as_ref()).unwrap();
     String::from_utf8(plaintext).unwrap()
@@ -47,19 +54,19 @@ fn main() {
     let (public_key, secret_key) = generate_keypair();
 
     // Encapsulate to get ciphertext and shared secret
-    let (ciphertext, alice_shared_secret) = encapsulate(&public_key);
+    let (ciphertext, key2_shared_secret) = encapsulation(&public_key);
 
     // Decapsulate to get the same shared secret
-    let bob_shared_secret = decapsulate(&ciphertext, &secret_key);
+    let bob_shared_secret = decapsulation(&ciphertext, &secret_key);
 
-    assert_eq!(alice_shared_secret, bob_shared_secret, "Shared secrets don't match!");
+    assert_eq!(key2_shared_secret, bob_shared_secret, "These Shared secrets don't match!");
 
     // Encrypt and decrypt the message
-    let encrypted = encrypt(plaintext, &alice_shared_secret);
+    let (encrypted, nonce) = encrypt(plaintext, &key2_shared_secret);
     println!("Encrypted (base64): {}", encrypted);
 
-    let decrypted = decrypt(&encrypted, &bob_shared_secret);
+    let decrypted = decrypt(&encrypted, &bob_shared_secret, &nonce);
     println!("Decrypted: {}", decrypted);
 
-    assert_eq!(plaintext, decrypted, "Decryption failed!");
+    assert_eq!(plaintext, decrypted, "Decryption failed!")
 }
